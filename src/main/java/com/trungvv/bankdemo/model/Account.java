@@ -17,15 +17,12 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Account {
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(
-            name = "UUID",
-            strategy = "org.hibernate.id.UUIDGenerator"
-    )
-    @Column(updatable = false, nullable = false)
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
-    @Column(unique = true, name = "account_number", nullable = false)
+    @Column(name = "account_number", nullable = false)
     private String accountNumber;
 
     @Column(name = "account_name", nullable = false)
@@ -43,4 +40,5 @@ public class Account {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
 }

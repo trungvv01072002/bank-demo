@@ -80,22 +80,21 @@ public class AccountController {
     }
 
     // Lọc tài khoản theo trạng thái
-    @GetMapping("/status")
-    public ResponseEntity<List<AccountDto>> listAccountsByStatus(@RequestParam String status) {
-        List<AccountDto> accounts = accountService.listAccountsByStatus(status);
-        return new ResponseEntity<>(accounts, HttpStatus.OK);
+    @GetMapping("/search")
+    public ResponseEntity<?> listAccountsByStatus(@RequestParam String keySearch, @RequestParam String status, @RequestParam int page, @RequestParam int size) {
+        return new ResponseEntity<>(accountService.listAccountsByKey(keySearch,status,page,size), HttpStatus.OK);
     }
 
     // Lấy số dư của tài khoản
-    @GetMapping("/{accountId}/balance")
-    public ResponseEntity<BigDecimal> getAccountBalance(@PathVariable String accountId) {
-        try {
-            BigDecimal balance = accountService.getAccountBalance(UUID.fromString(accountId));
-            return new ResponseEntity<>(balance, HttpStatus.OK);
-        } catch (ResourceNotFoundException ex) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-        }
-    }
+//    @GetMapping("/{accountId}/balance")
+//    public ResponseEntity<BigDecimal> getAccountBalance(@PathVariable String accountId) {
+//        try {
+//            BigDecimal balance = accountService.getAccountBalance(UUID.fromString(accountId));
+//            return new ResponseEntity<>(balance, HttpStatus.OK);
+//        } catch (ResourceNotFoundException ex) {
+//            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+//        }
+//    }
 
 //    @GetMapping
 //    public ResponseEntity<AccountDto> getAccountByAccountNumber(@RequestParam String accountNumber) {

@@ -1,6 +1,10 @@
 package com.trungvv.bankdemo.service;
 
+import com.trungvv.bankdemo.dto.AccountDto;
+import com.trungvv.bankdemo.dto.IDailLyTransactionSummary;
+import com.trungvv.bankdemo.dto.TransactionDto;
 import com.trungvv.bankdemo.exception.ResourceNotFoundException;
+import com.trungvv.bankdemo.mapper.TransactionMapper;
 import com.trungvv.bankdemo.model.Account;
 import com.trungvv.bankdemo.model.AccountStatus;
 import com.trungvv.bankdemo.model.Transaction;
@@ -10,6 +14,10 @@ import com.trungvv.bankdemo.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,19 +34,19 @@ public class TransactionServiceImpl implements TransactionService {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final TransactionMapper transactionMapper;
     /**
      * Tạo giao dịch
      */
     @Transactional
-    public Transaction createTransaction(UUID senderId, UUID receiverId, BigDecimal amount) {
+    public TransactionDto createTransaction(UUID senderId, UUID receiverId, BigDecimal amount, String message) {
+        validateSenderAndReceiver(senderId, receiverId);
         validateTransactionAmount(amount);
         Account sender = getActiveAccount(senderId, "Tài khoản gửi không hợp lệ hoặc không khả dụng");
         Account receiver = getActiveAccount(receiverId, "Tài khoản nhận không hợp lệ hoặc không khả dụng");
         validateSenderBalance(sender, amount);
-
         executeTransaction(sender, receiver, amount);
-
-        return saveTransaction(senderId, receiverId, amount, TransactionStatus.SUCCESS);
+        return saveTransaction(senderId, receiverId, amount, TransactionStatus.SUCCESS, message);
     }
 
     /**
@@ -49,45 +58,38 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Transaction updateTransactionStatus(UUID transactionId, String status) {
-        return null;
+    public TransactionDto updateTransactionStatus(UUID transactionId, String status) {
+        Transaction transaction = getTransactionById(transactionId);
+        TransactionStatus newStatus = parseTransactionStatus(status);
+        transaction.setStatus(newStatus);
+        return transactionMapper.transactionToTransactionDto(transactionRepository.save(transaction));
     }
 
     @Override
     public void deleteTransaction(UUID transactionId) {
-
+        transactionRepository.deleteById(transactionId);
     }
 
     /**
      * Lấy danh sách giao dịch theo User ID
      */
-    public List<Transaction> listTransactionsByUserId(UUID userId) {
-        return transactionRepository.findBySenderAccountIdOrReceiverAccountId(userId, userId);
+    public List<TransactionDto> listTransactionsByUserId(UUID userId) {
+        return transactionMapper.transactionsToTransactionDtos(transactionRepository.findBySenderAccountIdOrReceiverAccountId(userId, userId));
     }
 
-    @Override
-    public List<Transaction> listTransactionsByAccountId(UUID accountId) {
-        return List.of();
-    }
-
-    /**
-     * Lấy danh sách giao dịch theo trạng thái
-     */
-    public List<Transaction> listTransactionsByStatus(String status) {
-        TransactionStatus transactionStatus = parseTransactionStatus(status);
-        return transactionRepository.findByStatus(transactionStatus);
-    }
-
-    @Override
-    public List<Transaction> listTransactionsByDateRange(LocalDate startDate, LocalDate endDate) {
-        return List.of();
-    }
 
     /**
      * Lấy danh sách giao dịch theo khoảng thời gian
      */
-    public List<Transaction> listTransactionsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return transactionRepository.findByCreatedAtBetween(startDate, endDate);
+    @Override
+    public Page<TransactionDto> listTransactionsByDateRange(LocalDate startDate, LocalDate endDate, UUID accountId, String status, int page, int size) {
+
+        TransactionStatus transactionStatus = (status == null || status.trim().isEmpty()) ? null : TransactionStatus.valueOf(status.toUpperCase());
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Transaction> transactionPage = transactionRepository.findByCreatedAtBetween(startDate, endDate, accountId, transactionStatus, pageable);
+        List<TransactionDto> transactionDtos = transactionMapper.transactionsToTransactionDtos(transactionPage.getContent());
+        return new PageImpl<>(transactionDtos, pageable, transactionPage.getTotalElements());
+
     }
 
     /**
@@ -98,18 +100,13 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElse(BigDecimal.ZERO);
     }
 
-    /**
-     * Lấy số lượng giao dịch theo tài khoản
-     */
-    public Long getTransactionCountByAccountId(UUID accountId) {
-        Account account = getActiveAccount(accountId, "Tài khoản không hợp lệ hoặc không khả dụng");
-        return transactionRepository.countBySenderAccountIdOrReceiverAccountId(account);
+    @Override
+    public List<IDailLyTransactionSummary> getDailyTransactionSummary(LocalDate date) {
+        return transactionRepository.getDailyTransactionSummaryForAllCustomers(date);
     }
 
-    @Override
-    public Map<LocalDate, BigDecimal> getDailyTransactionSummary(LocalDate date) {
-        return Map.of();
-    }
+
+
 
     // --- Private Helper Methods ---
 
@@ -140,6 +137,13 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
+    private void validateSenderAndReceiver(UUID senderId, UUID receiverId) {
+        if (senderId.equals(receiverId)) {
+            throw new IllegalArgumentException("Sender và receiver không thể giống nhau");
+        }
+    }
+
+
     /**
      * Thực hiện giao dịch: cập nhật số dư
      */
@@ -156,15 +160,16 @@ public class TransactionServiceImpl implements TransactionService {
      * Lưu giao dịch
      */
     @Transactional
-    private Transaction saveTransaction(UUID senderId, UUID receiverId, BigDecimal amount, TransactionStatus status) {
+    TransactionDto saveTransaction(UUID senderId, UUID receiverId, BigDecimal amount, TransactionStatus status, String message) {
         Transaction transaction = Transaction.builder()
                 .senderAccountId(senderId)
                 .receiverAccountId(receiverId)
                 .amount(amount)
                 .status(status)
+                .message(message)
                 .createdAt(LocalDateTime.now())
                 .build();
-        return transactionRepository.save(transaction);
+        return transactionMapper.transactionToTransactionDto(transactionRepository.save(transaction));
     }
 
     /**

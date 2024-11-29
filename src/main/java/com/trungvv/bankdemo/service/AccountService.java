@@ -2,6 +2,7 @@ package com.trungvv.bankdemo.service;
 
 import com.trungvv.bankdemo.dto.AccountDto;
 import com.trungvv.bankdemo.model.Account;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,6 +16,6 @@ public interface AccountService {
     AccountDto updateAccountBalance(UUID accountId, BigDecimal newBalance);
     void deleteAccount(UUID accountId);
     List<AccountDto> listAllAccounts();
-    List<AccountDto> listAccountsByStatus(String status);
+    Page<AccountDto> listAccountsByKey(String keySearch, String status, int page, int size);
     BigDecimal getAccountBalance(UUID accountId);
 }

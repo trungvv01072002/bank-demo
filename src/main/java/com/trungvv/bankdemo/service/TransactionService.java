@@ -1,7 +1,10 @@
 package com.trungvv.bankdemo.service;
 
+import com.trungvv.bankdemo.dto.IDailLyTransactionSummary;
+import com.trungvv.bankdemo.dto.TransactionDto;
 import com.trungvv.bankdemo.model.Transaction;
 import com.trungvv.bankdemo.model.TransactionStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -11,15 +14,12 @@ import java.util.Map;
 import java.util.UUID;
 
 public interface TransactionService {
-    Transaction createTransaction(UUID senderId, UUID receiverId, BigDecimal amount);
+    TransactionDto createTransaction(UUID senderId, UUID receiverId, BigDecimal amount, String message);
     Transaction getTransactionById(UUID transactionId);
-    Transaction updateTransactionStatus(UUID transactionId, String status);
+    TransactionDto updateTransactionStatus(UUID transactionId, String status);
     void deleteTransaction(UUID transactionId);
-    List<Transaction> listTransactionsByUserId(UUID userId);
-    List<Transaction> listTransactionsByAccountId(UUID accountId);
-    List<Transaction> listTransactionsByStatus(String status);
-    List<Transaction> listTransactionsByDateRange(LocalDate startDate, LocalDate endDate);
+    List<TransactionDto> listTransactionsByUserId(UUID userId);
+    Page<TransactionDto> listTransactionsByDateRange(LocalDate startDate, LocalDate endDate, UUID accountId, String status, int page, int size);
     BigDecimal getTotalTransactionsAmountByAccountId(UUID accountId);
-    Long getTransactionCountByAccountId(UUID accountId);
-    Map<LocalDate, BigDecimal> getDailyTransactionSummary(LocalDate date);
+    List<IDailLyTransactionSummary> getDailyTransactionSummary(LocalDate date);
 }

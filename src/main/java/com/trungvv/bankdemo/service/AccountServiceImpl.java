@@ -8,6 +8,10 @@ import com.trungvv.bankdemo.repository.AccountRepository;
 import com.trungvv.bankdemo.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +41,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    @Transactional
     public AccountDto createAccount(String accountName, BigDecimal initialBalance) {
         String accountNumber = generateUniqueAccountNumber();
 
@@ -93,10 +96,13 @@ public class AccountServiceImpl implements AccountService {
         return accountMapper.accountsToAccountDtos(accountRepository.findAll());
     }
 
-    public List<AccountDto> listAccountsByStatus(String status) {
+    public Page<AccountDto> listAccountsByKey(String keySearch, String status, int page, int size) {
         try {
-            AccountStatus accountStatus = AccountStatus.valueOf(status.toUpperCase());
-            return accountMapper.accountsToAccountDtos(accountRepository.findByStatus(accountStatus));
+            AccountStatus accountStatus = (status == null || status.trim().isEmpty()) ? null : AccountStatus.valueOf(status.toUpperCase());
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Account> accountPage = accountRepository.findByKeySearch(keySearch, accountStatus, pageable);
+            List<AccountDto> accountDtos = accountMapper.accountsToAccountDtos(accountPage.getContent());
+            return new PageImpl<>(accountDtos, pageable, accountPage.getTotalElements());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid status value: " + status);
         }
