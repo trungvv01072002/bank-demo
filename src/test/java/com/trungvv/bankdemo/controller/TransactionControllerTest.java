@@ -122,7 +122,7 @@ class TransactionControllerTest {
                 new TransactionDto(UUID.randomUUID(), accountId, UUID.randomUUID(), BigDecimal.valueOf(2000), "Test", "SUCCESS")
         );
 
-        Mockito.when(transactionService.listTransactionsByDateRange(any(LocalDate.class), any(LocalDate.class), eq(accountId), eq("SUCCESS"), eq(0), eq(10)))
+        Mockito.when(transactionService.listTransactionsByDateRange(any(LocalDate.class), any(LocalDate.class), eq(accountId), eq("SUCCESS"),eq("ALL"), eq(0), eq(10)))
                 .thenReturn(Page.empty());
 
         mockMvc.perform(get("/api/transactions/date-range")
@@ -130,6 +130,7 @@ class TransactionControllerTest {
                         .param("endDate", LocalDate.now().toString())
                         .param("accountId", accountId.toString())
                         .param("status", "SUCCESS")
+                        .param("typeTransaction", "ALL")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())

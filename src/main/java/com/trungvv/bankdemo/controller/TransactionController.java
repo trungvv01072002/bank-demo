@@ -104,10 +104,11 @@ public class TransactionController {
                                                                          @RequestParam String accountId,
                                                                          @RequestParam String status,
                                                                          @RequestParam int page,
-                                                                        @RequestParam int size
+                                                                        @RequestParam int size,
+                                                                        @RequestParam String typeTransaction
                                                                 ) {
         try {
-            Page<TransactionDto> transactions = transactionService.listTransactionsByDateRange(startDate, endDate, UUID.fromString(accountId), status, page, size);
+            Page<TransactionDto> transactions = transactionService.listTransactionsByDateRange(startDate, endDate, UUID.fromString(accountId), status,typeTransaction, page, size);
             return ResponseEntity.ok(transactions);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);

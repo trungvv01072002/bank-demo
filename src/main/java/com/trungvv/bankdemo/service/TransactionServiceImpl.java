@@ -82,11 +82,11 @@ public class TransactionServiceImpl implements TransactionService {
      * Lấy danh sách giao dịch theo khoảng thời gian
      */
     @Override
-    public Page<TransactionDto> listTransactionsByDateRange(LocalDate startDate, LocalDate endDate, UUID accountId, String status, int page, int size) {
+    public Page<TransactionDto> listTransactionsByDateRange(LocalDate startDate, LocalDate endDate, UUID accountId, String status, String typeTransaction, int page, int size) {
 
         TransactionStatus transactionStatus = (status == null || status.trim().isEmpty()) ? null : TransactionStatus.valueOf(status.toUpperCase());
         Pageable pageable = PageRequest.of(page, size);
-        Page<Transaction> transactionPage = transactionRepository.findByCreatedAtBetween(startDate, endDate, accountId, transactionStatus, pageable);
+        Page<Transaction> transactionPage = transactionRepository.findByCreatedAtBetween(startDate, endDate, accountId, transactionStatus, typeTransaction, pageable);
         List<TransactionDto> transactionDtos = transactionMapper.transactionsToTransactionDtos(transactionPage.getContent());
         return new PageImpl<>(transactionDtos, pageable, transactionPage.getTotalElements());
 

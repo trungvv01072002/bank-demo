@@ -68,7 +68,7 @@ class TransactionRepositoryTest {
         LocalDate endDate = LocalDate.now();
 
         List<Transaction> transactions = transactionRepository.findByCreatedAtBetween(
-                startDate, endDate, senderId, null, Pageable.unpaged()).getContent();
+                startDate, endDate, senderId, null,"ALL", Pageable.unpaged()).getContent();
 
         assertNotNull(transactions);
         assertEquals(2, transactions.size());

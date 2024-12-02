@@ -35,8 +35,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     @Query("SELECT t " +
             "FROM Transaction t " +
             "WHERE CAST(t.createdAt AS date) BETWEEN :startDate AND :endDate " +
-            "AND (t.senderAccountId = :accountId OR t.receiverAccountId = :accountId)")
-    Page<Transaction> findByCreatedAtBetween(LocalDate startDate, LocalDate endDate, UUID accountId, TransactionStatus status , Pageable pageable);
+            "AND ((:typeTransaction = 'ALL' AND (t.senderAccountId = :accountId OR t.receiverAccountId = :accountId)) " +
+            "     OR (:typeTransaction = 'TRANSFER' AND t.senderAccountId = :accountId) " +
+            "     OR (:typeTransaction = 'RECEIVE' AND t.receiverAccountId = :accountId))")
+    Page<Transaction> findByCreatedAtBetween(LocalDate startDate, LocalDate endDate, UUID accountId, TransactionStatus status, String typeTransaction , Pageable pageable);
 
     /**
      * Tính tổng số tiền giao dịch theo Account ID.

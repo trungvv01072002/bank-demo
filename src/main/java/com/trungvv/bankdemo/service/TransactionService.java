@@ -19,7 +19,7 @@ public interface TransactionService {
     TransactionDto updateTransactionStatus(UUID transactionId, String status);
     void deleteTransaction(UUID transactionId);
     List<TransactionDto> listTransactionsByUserId(UUID userId);
-    Page<TransactionDto> listTransactionsByDateRange(LocalDate startDate, LocalDate endDate, UUID accountId, String status, int page, int size);
+    Page<TransactionDto> listTransactionsByDateRange(LocalDate startDate, LocalDate endDate, UUID accountId, String status, String typeTransaction, int page, int size);
     BigDecimal getTotalTransactionsAmountByAccountId(UUID accountId);
     List<IDailLyTransactionSummary> getDailyTransactionSummary(LocalDate date);
 }

@@ -131,15 +131,15 @@ class TransactionServiceImplTest {
 
         List<Transaction> transactions = List.of(transaction);
         Page<Transaction> transactionPage = new PageImpl<>(transactions, pageable, transactions.size());
-        when(transactionRepository.findByCreatedAtBetween(startDate, endDate, senderId, null, pageable)).thenReturn(transactionPage);
+        when(transactionRepository.findByCreatedAtBetween(startDate, endDate, senderId, null,"ALL", pageable)).thenReturn(transactionPage);
         when(transactionMapper.transactionsToTransactionDtos(transactions)).thenReturn(List.of(transactionDto));
 
-        Page<TransactionDto> result = transactionService.listTransactionsByDateRange(startDate, endDate, senderId, null, page, size);
+        Page<TransactionDto> result = transactionService.listTransactionsByDateRange(startDate, endDate, senderId, null,"ALL", page, size);
 
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals(transactionDto.getDescription(), result.getContent().get(0).getDescription());
-        verify(transactionRepository, times(1)).findByCreatedAtBetween(startDate, endDate, senderId, null, pageable);
+        verify(transactionRepository, times(1)).findByCreatedAtBetween(startDate, endDate, senderId, null,"ALL", pageable);
     }
 
     @Test
